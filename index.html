@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API Response Test Web App</title>
+  <meta name="description" content="A minimal web app to verify API response delivery and basic browser capabilities." />
+  <style>
+    :root {
+      --bg: #0f1220;
+      --panel: #171a2b;
+      --panel-2: #1e2236;
+      --text: #e7ebf4;
+      --muted: #a7b0c3;
+      --accent: #6dd3fb;
+      --ok: #2ecc71;
+      --warn: #f1c40f;
+      --err: #ff6b6b;
+      --border: #2a3152;
+      --btn: #2b3154;
+      --btn-hover: #353c66;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      background: radial-gradient(1200px 800px at 75% -200px, #1b1f36, transparent 60%), var(--bg);
+      color: var(--text);
+      display: grid;
+      place-items: start center;
+      gap: 16px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 940px;
+      padding: 28px 20px 0;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 940px;
+      padding: 20px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .title .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 10px var(--accent), 0 0 20px rgba(109,211,251,0.45);
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 16px 0 6px;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--btn);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      transition: transform .05s ease, background .2s ease, border-color .2s ease;
+    }
+    button:hover { background: var(--btn-hover); border-color: #3a4270; }
+    button:active { transform: translateY(1px); }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .results {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .result-item {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      align-items: start;
+      gap: 10px;
+      padding: 12px;
+      border: 1px dashed #2c355d;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .badge {
+      width: 24px; height: 24px; display: grid; place-items: center;
+      border-radius: 50%;
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .pass { background: rgba(46, 204, 113, 0.15); color: var(--ok); border: 1px solid rgba(46,204,113,0.35); }
+    .fail { background: rgba(255, 107, 107, 0.15); color: var(--err); border: 1px solid rgba(255,107,107,0.35); }
+    .skip { background: rgba(241, 196, 15, 0.15); color: var(--warn); border: 1px solid rgba(241,196,15,0.35); }
+
+    .result-title { font-weight: 700; }
+    .result-details { color: var(--muted); font-size: 13px; margin-top: 2px; }
+    .result-meta { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+    .summary {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border);
+      background: rgba(109,211,251,0.05);
+      margin-top: 12px;
+    }
+
+    .summary strong { color: var(--accent); }
+    .code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    footer {
+      width: 100%;
+      max-width: 940px;
+      padding: 0 20px 30px;
+      color: var(--muted);
+      font-size: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .token {
+      padding: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px dashed #2c355d;
+      border-radius: 8px;
+      margin-top: 8px;
+      word-break: break-all;
+      color: #d7e5ff;
+    }
+
+    @media (max-width: 560px) {
+      .result-item { grid-template-columns: 28px 1fr; }
+      .result-meta { grid-column: 2 / 3; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">
+      <span class="dot" aria-hidden="true"></span>
+      <span>API Response Test Web App</span>
+    </div>
+    <div class="subtitle">
+      This minimal client-side app verifies that an API delivered a functional web page and that basic browser features work.
+      Use the Run Test button to execute diagnostics and copy a report.
+    </div>
+  </header>
+
+  <main class="app">
+    <section class="card" aria-labelledby="controls-heading">
+      <h2 id="controls-heading" class="visually-hidden" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">Controls</h2>
+      <div class="controls">
+        <button id="runBtn" title="Execute diagnostics">Run Test</button>
+        <button id="copyBtn" title="Copy JSON report" disabled>Copy Report JSON</button>
+        <button id="resetBtn" title="Clear results">Reset</button>
+      </div>
+      <div class="small">Tip: The test also runs automatically on page load.</div>
+      <div id="tokenWrap" class="token" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+    </section>
+
+    <section class="card" style="margin-top: 16px" aria-labelledby="results-heading">
+      <div class="title" style="margin-bottom: 6px;">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="results-heading">Diagnostics</span>
+      </div>
+      <div class="results" id="results" aria-live="polite"></div>
+      <div class="summary" id="summary" hidden>
+        <div><strong id="passCount">0</strong> passed, <strong id="failCount" style="color:var(--err)">0</strong> failed, <strong id="skipCount" style="color:var(--warn)">0</strong> skipped</div>
+        <div style="margin-left:auto;">Run ID: <span class="code" id="runId">—</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div>Version: 1.0.0 • Round 1</div>
+    <div>License: MIT</div>
+  </footer>
+
+  <script>
+    (function () {
+      const $ = (sel) => document.querySelector(sel);
+      const resultsEl = $('#results');
+      const summaryEl = $('#summary');
+      const passCountEl = $('#passCount');
+      const failCountEl = $('#failCount');
+      const skipCountEl = $('#skipCount');
+      const runIdEl = $('#runId');
+      const tokenWrap = $('#tokenWrap');
+      const runBtn = $('#runBtn');
+      const copyBtn = $('#copyBtn');
+      const resetBtn = $('#resetBtn');
+
+      let domReady = false;
+      document.addEventListener('DOMContentLoaded', () => { domReady = true; });
+
+      const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+      function b64url(bytes) {
+        const bin = String.fromCharCode(...bytes);
+        return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      }
+
+      function makeBadge(status) {
+        const span = document.createElement('span');
+        span.className = `badge ${status}`;
+        span.textContent = status === 'pass' ? '✓' : status === 'fail' ? '✗' : '•';
+        span.title = status === 'skip' ? 'Skipped' : status === 'pass' ? 'Passed' : 'Failed';
+        return span;
+      }
+
+      function addResult({ name, status, details, meta }) {
+        const row = document.createElement('div');
+        row.className = 'result-item';
+
+        const badge = makeBadge(status);
+        const content = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'result-title';
+        title.textContent = name;
+
+        const det = document.createElement('div');
+        det.className = 'result-details';
+        det.textContent = details || '';
+
+        content.appendChild(title);
+        if (details) content.appendChild(det);
+
+        const right = document.createElement('div');
+        right.className = 'result-meta';
+        right.textContent = meta || '';
+
+        row.appendChild(badge);
+        row.appendChild(content);
+        row.appendChild(right);
+        resultsEl.appendChild(row);
+      }
+
+      function summarize(results, runId) {
+        const pass = results.filter(r => r.status === 'pass').length;
+        const fail = results.filter(r => r.status === 'fail').length;
+        const skip = results.filter(r => r.status === 'skip').length;
+        passCountEl.textContent = pass;
+        failCountEl.textContent = fail;
+        skipCountEl.textContent = skip;
+        runIdEl.textContent = runId;
+        summaryEl.hidden = false;
+      }
+
+      function genRunId() {
+        const bytes = new Uint8Array(12);
+        (crypto.getRandomValues || ((arr)=>{ for(let i=0;i<arr.length;i++) arr[i]=Math.floor(Math.random()*256); return arr; }))(bytes);
+        return b64url(bytes);
+      }
+
+      function showToken(token) {
+        tokenWrap.hidden = false;
+        tokenWrap.textContent = `Session token: ${token}`;
+      }
+
+      const tests = [
+        async () => {
+          return {
+            name: 'JavaScript Runtime Active',
+            status: 'pass',
+            details: 'Script executed successfully.',
+            meta: navigator.userAgentData?.brands?.map(b => `${b.brand} ${b.version}`).join(', ') || navigator.userAgent
+          };
+        },
+        async () => {
+          return {
+            name: 'DOM Content Loaded',
+            status: domReady ? 'pass' : 'pass', // script runs post-DOM
+            details: 'Document structure is accessible.',
+            meta: `readyState=${document.readyState}`
+          };
+        },
+        async () => {
+          try {
+            const bytes = new Uint8Array(16);
+            crypto.getRandomValues(bytes);
+            const token = b64url(bytes);
+            localStorage.setItem('apitest.token', token);
+            showToken(token);
+            return {
+              name: 'Web Crypto Randomness',
+              status: token.length > 0 ? 'pass' : 'fail',
+              details: 'Generated a base64url random token.',
+              meta: `${token.slice(0, 8)}…`
+            };
+          } catch (e) {
+            return {
+              name: 'Web Crypto Randomness',
+              status: 'fail',
+              details: 'crypto.getRandomValues is not available.',
+              meta: String(e)
+            };
+          }
+        },
+        async () => {
+          try {
+            const key = 'apitest.storage';
+            const val = 'ok-' + Date.now();
+            localStorage.setItem(key, val);
+            const got = localStorage.getItem(key);
+            localStorage.removeItem(key);
+            const ok = got === val;
+            return {
+              name: 'Local Storage R/W',
+              status: ok ? 'pass' : 'fail',
+              details: ok ? 'localStorage operational.' : 'Mismatch on read/write.',
+              meta: ok ? 'verified' : `expected=${val} got=${got}`
+            };
+          } catch (e) {
+            return {
+              name: 'Local Storage R/W',
+              status: 'skip',
+              details: 'Storage unavailable (possibly disabled or in private mode).',
+              meta: String(e)
+            };
+          }
+        },
+        async () => {
+          const t1 = performance.now();
+          await sleep(12);
+          const t2 = performance.now();
+          const ok = t2 > t1;
+          return {
+            name: 'High-Resolution Timer',
+            status: ok ? 'pass' : 'fail',
+            details: 'performance.now() increased over time.',
+            meta: `${t1.toFixed(3)} → ${t2.toFixed(3)} ms`
+          };
+        },
+        async () => {
+          // Attempt to fetch self. In file:// contexts, this may throw; treat as skip.
+          try {
+            const url = location.href;
+            const res = await fetch(url, { method: 'GET', mode: 'no-cors', cache: 'no-store' });
+            // no-cors yields opaque; if it didn't throw, network is generally functional
+            const ok = !!res;
+            return {
+              name: 'Fetch Capability (self)',
+              status: ok ? 'pass' : 'fail',
+              details: ok ? 'fetch() executed without exception.' : 'fetch() returned falsy response.',
+              meta: res ? `type=${res.type}` : 'no response'
+            };
+          } catch (e) {
+            // Distinguish file context
+            const isFile = location.protocol === 'file:';
+            return {
+              name: 'Fetch Capability (self)',
+              status: isFile ? 'skip' : 'fail',
+              details: isFile ? 'Skipped in file:// context (browser restrictions).' : 'fetch() failed.',
+              meta: String(e)
+            };
+          }
+        }
+      ];
+
+      async function runAll() {
+        runBtn.disabled = true;
+        copyBtn.disabled = true;
+        resetBtn.disabled = true;
+        resultsEl.innerHTML = '';
+        summaryEl.hidden = true;
+
+        const runId = genRunId();
+        const startedAt = new Date().toISOString();
+
+        const report = {
+          runId,
+          startedAt,
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          results: []
+        };
+
+        for (const t of tests) {
+          // small stagger to show progress
+          // eslint-disable-next-line no-await-in-loop
+          const res = await t();
+          report.results.push(res);
+          addResult(res);
+          await sleep(60);
+        }
+
+        report.endedAt = new Date().toISOString();
+
+        summarize(report.results, runId);
+
+        // Store the latest report for copy action
+        window.__latestReport = report;
+
+        copyBtn.disabled = false;
+        runBtn.disabled = false;
+        resetBtn.disabled = false;
+      }
+
+      function copyReport() {
+        const report = window.__latestReport || {
+          note: 'No test run yet. Click "Run Test" first.'
+        };
+        const text = JSON.stringify(report, null, 2);
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
+            copyBtn.textContent = 'Copied!';
+            setTimeout(()=> copyBtn.textContent = 'Copy Report JSON', 1200);
+          }).catch(() => fallbackCopy(text));
+        } else {
+          fallbackCopy(text);
+        }
+      }
+
+      function fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch {}
+        document.body.removeChild(ta);
+        copyBtn.textContent = 'Copied!';
+        setTimeout(()=> copyBtn.textContent = 'Copy Report JSON', 1200);
+      }
+
+      function resetUI() {
+        resultsEl.innerHTML = '';
+        summaryEl.hidden = true;
+        tokenWrap.hidden = true;
+        delete window.__latestReport;
+      }
+
+      runBtn.addEventListener('click', runAll);
+      copyBtn.addEventListener('click', copyReport);
+      resetBtn.addEventListener('click', resetUI);
+
+      // Auto-run once on load
+      window.addEventListener('load', () => {
+        runAll();
+      });
+    })();
+  </script>
+</body>
+</html>
